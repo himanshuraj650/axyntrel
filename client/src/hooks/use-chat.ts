@@ -86,7 +86,18 @@ export function useChat(roomId: string) {
     };
 
     pc.ontrack = (event) => {
-      setCallState(prev => ({ ...prev, remoteStream: event.streams[0] }));
+      console.log("Received remote track:", event.track.kind);
+      setCallState(prev => ({ 
+        ...prev, 
+        remoteStream: event.streams[0] 
+      }));
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", pc.iceConnectionState);
+      if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
+        endCall();
+      }
     };
 
     pcRef.current = pc;

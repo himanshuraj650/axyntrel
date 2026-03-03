@@ -117,14 +117,17 @@ export default function Chat() {
 
         <div className="flex items-center gap-2">
           {connectionState === "secured" && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={callState.isCalling ? endCall : startCall}
-              className={callState.isCalling ? "text-destructive" : "text-primary"}
-            >
-              {callState.isCalling ? <PhoneOff className="w-5 h-5" /> : <Phone className="w-5 h-5" />}
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={callState.isCalling ? endCall : startCall}
+                className={callState.isCalling ? "text-destructive" : "text-primary"}
+                title={callState.isCalling ? "End Call" : "Video Call"}
+              >
+                {callState.isCalling ? <PhoneOff className="w-5 h-5" /> : <Phone className="w-5 h-5" />}
+              </Button>
+            </div>
           )}
         </div>
       </header>
