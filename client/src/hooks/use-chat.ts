@@ -104,9 +104,9 @@ export function useChat(roomId: string) {
     return pc;
   }, [sendCallSignal]);
 
-  const startCall = async () => {
+  const startCall = async (video: boolean = true) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video, audio: true });
       setCallState(prev => ({ ...prev, isCalling: true, localStream: stream }));
       
       const pc = initPeerConnection();
@@ -114,16 +114,20 @@ export function useChat(roomId: string) {
       
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      sendCallSignal({ type: 'offer', offer });
+      sendCallSignal({ type: 'offer', offer, video });
     } catch (err) {
       console.error("Failed to start call", err);
     }
   };
 
   const endCall = () => {
-    pcRef.current?.close();
-    pcRef.current = null;
-    callState.localStream?.getTracks().forEach(track => track.stop());
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    if (callState.localStream) {
+      callState.localStream.getTracks().forEach(track => track.stop());
+    }
     setCallState({
       isCalling: false,
       isReceiving: false,
@@ -240,8 +244,9 @@ export function useChat(roomId: string) {
             const { signal } = JSON.parse(decryptedJson);
 
             if (signal.type === 'offer') {
+              console.log("Received offer, sending answer");
               setCallState(prev => ({ ...prev, isReceiving: true }));
-              const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+              const stream = await navigator.mediaDevices.getUserMedia({ video: signal.video, audio: true });
               setCallState(prev => ({ ...prev, localStream: stream, isCalling: true }));
               
               const pc = initPeerConnection();
@@ -251,9 +256,15 @@ export function useChat(roomId: string) {
               await pc.setLocalDescription(answer);
               sendCallSignal({ type: 'answer', answer });
             } else if (signal.type === 'answer') {
+              console.log("Received answer, setting remote description");
               await pcRef.current?.setRemoteDescription(new RTCSessionDescription(signal.answer));
             } else if (signal.type === 'candidate') {
-              await pcRef.current?.addIceCandidate(new RTCIceCandidate(signal.candidate));
+              console.log("Received ice candidate");
+              try {
+                await pcRef.current?.addIceCandidate(new RTCIceCandidate(signal.candidate));
+              } catch (e) {
+                console.error("Error adding ice candidate", e);
+              }
             }
           }
           else if (parsed.type === "typing") {

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useRoute } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldAlert, ShieldCheck, Copy, CheckCircle2, Lock, ArrowLeft, Phone, PhoneOff, X } from "lucide-react";
+import { ShieldAlert, ShieldCheck, Copy, CheckCircle2, Lock, ArrowLeft, Phone, PhoneOff, X, Mic, MicOff } from "lucide-react";
 import { useChat } from "@/hooks/use-chat";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -121,11 +121,20 @@ export default function Chat() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={callState.isCalling ? endCall : startCall}
-                className={callState.isCalling ? "text-destructive" : "text-primary"}
-                title={callState.isCalling ? "End Call" : "Video Call"}
+                onClick={() => startCall(true)}
+                className="text-primary"
+                title="Video Call"
               >
-                {callState.isCalling ? <PhoneOff className="w-5 h-5" /> : <Phone className="w-5 h-5" />}
+                <Phone className="w-5 h-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => startCall(false)}
+                className="text-primary"
+                title="Voice Call"
+              >
+                <Mic className="w-5 h-5" />
               </Button>
             </div>
           )}
