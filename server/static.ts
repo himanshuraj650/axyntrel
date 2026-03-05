@@ -11,8 +11,8 @@ export function serveStatic(app: Express) {
   // Serve static files
   app.use(express.static(distPath));
 
-  // SPA fallback for React routes
-  app.get("/*", (_req, res) => {
+  // React SPA fallback (Express 5 compatible)
+  app.get(/.*/, (_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
