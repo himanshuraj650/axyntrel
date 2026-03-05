@@ -8,11 +8,11 @@ const __dirname = path.dirname(__filename);
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "../client/dist");
 
-  // Serve static frontend
+  // Serve static files
   app.use(express.static(distPath));
 
-  // SPA fallback
-  app.get("*", (_req, res) => {
+  // SPA fallback for React routes
+  app.get("/*", (_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
