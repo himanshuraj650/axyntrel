@@ -10,24 +10,23 @@
     --font-mono: 'Geist Mono', monospace;
 
     /* Hacker-style / Minimal Dark Theme */
-    --background: 0 0% 4%; /* #0a0a0a */
-    --foreground: 0 0% 98%; /* #fafafa */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
     
-    --card: 0 0% 7%; /* #121212 */
+    --card: 0 0% 7%;
     --card-foreground: 0 0% 98%;
     
     --popover: 0 0% 7%;
     --popover-foreground: 0 0% 98%;
     
-    /* Neon Green / Emerald for Secure Status */
-    --primary: 158 100% 40%; /* #10b981 / Emerald 500 - more hacker-like */
+    --primary: 158 100% 40%;
     --primary-foreground: 0 0% 4%;
     
     --secondary: 0 0% 12%;
     --secondary-foreground: 0 0% 98%;
     
     --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 64%; /* #a3a3a3 */
+    --muted-foreground: 0 0% 64%;
     
     --accent: 0 0% 15%;
     --accent-foreground: 0 0% 98%;
@@ -45,12 +44,12 @@
     --elevate-2: rgba(255, 255, 255, 0.1);
   }
 
-  /* Force dark mode behavior since this is a dark-only app */
+  /* Base body styling */
   body {
     @apply bg-background text-foreground font-sans antialiased selection:bg-primary/30 selection:text-primary;
     color-scheme: dark;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-mono);
     @apply tracking-tight;
@@ -61,11 +60,11 @@
   .font-mono {
     font-family: var(--font-mono);
   }
-  
-  /* Matrix/Hacker rain subtle effect for background */
+
+  /* Grid background pattern */
   .bg-grid-pattern {
     background-size: 40px 40px;
-    background-image: 
+    background-image:
       linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
@@ -75,25 +74,30 @@
   .hover-elevate {
     @apply transition-transform duration-200 hover:-translate-y-[1px];
   }
-  
+
   .active-elevate-2 {
     @apply transition-transform duration-75 active:translate-y-[1px];
   }
 
-  /* Custom Scrollbar for chat */
+  /* Hide scrollbars */
   .scrollbar-hidden::-webkit-scrollbar {
     display: none;
   }
+
   .scrollbar-hidden {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 }
 
-/* Animations */
+/* Animation */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 10px 0px rgba(16, 185, 129, 0.2); }
-  50% { box-shadow: 0 0 20px 2px rgba(16, 185, 129, 0.5); }
+  0%, 100% {
+    box-shadow: 0 0 10px 0px rgba(16, 185, 129, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px 2px rgba(16, 185, 129, 0.5);
+  }
 }
 
 .animate-pulse-glow {
