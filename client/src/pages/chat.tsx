@@ -88,64 +88,67 @@ export default function Chat() {
 
       {/* Header */}
       <header className="flex-none h-16 border-b border-border bg-card/50 backdrop-blur-md flex items-center justify-between px-4">
-      <div className="flex items-center gap-2">
 
-  <Button
-    variant="ghost"
-    size="icon"
-    onClick={() => startCall(false)}
-    title="Voice Call"
-  >
-    <Phone className="w-5 h-5" />
-  </Button>
+  {/* LEFT SIDE */}
+  <div className="flex items-center gap-3">
 
-  <Button
-    variant="ghost"
-    size="icon"
-    onClick={() => startCall(true)}
-    title="Video Call"
-  >
-    <Video className="w-5 h-5" />
-  </Button>
+    <Link
+      href="/"
+      className="text-muted-foreground hover:text-foreground transition-colors p-2 -ml-2 rounded-lg hover:bg-accent"
+    >
+      <ArrowLeft className="w-5 h-5" />
+    </Link>
 
-</div>
+    <div className="flex flex-col">
 
-        <div className="flex items-center gap-3">
+      <div
+        className="flex items-center gap-2 group cursor-pointer"
+        onClick={copyRoomId}
+      >
+        <h1 className="font-mono font-bold text-sm tracking-widest">
+          ID: {roomId}
+        </h1>
 
-          <Link
-            href="/"
-            className="text-muted-foreground hover:text-foreground transition-colors p-2 -ml-2 rounded-lg hover:bg-accent"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
+        {copied ? (
+          <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+        ) : (
+          <Copy className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        )}
+      </div>
 
-          <div className="flex flex-col">
+      <div className={`flex items-center gap-1.5 text-[11px] font-medium font-mono uppercase tracking-wider ${currentStatus.color}`}>
+        <StatusIcon className="w-3 h-3" />
+        <span>{currentStatus.text}</span>
+      </div>
 
-            <div
-              className="flex items-center gap-2 group cursor-pointer"
-              onClick={copyRoomId}
-            >
-              <h1 className="font-mono font-bold text-sm tracking-widest">
-                ID: {roomId}
-              </h1>
+    </div>
+  </div>
 
-              {copied ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-              ) : (
-                <Copy className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              )}
-            </div>
 
-            <div className={`flex items-center gap-1.5 text-[11px] font-medium font-mono uppercase tracking-wider ${currentStatus.color}`}>
-              <StatusIcon className="w-3 h-3" />
-              <span>{currentStatus.text}</span>
-            </div>
+  {/* RIGHT SIDE */}
+  <div className="flex items-center gap-2">
 
-          </div>
-        </div>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => startCall(false)}
+      title="Voice Call"
+    >
+      <Phone className="w-5 h-5" />
+    </Button>
 
-      </header>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => startCall(true)}
+      title="Video Call"
+    >
+      <Video className="w-5 h-5" />
+    </Button>
 
+  </div>
+
+</header>
       {/* Chat Area */}
       <main
         ref={scrollRef}
