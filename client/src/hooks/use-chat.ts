@@ -58,7 +58,7 @@ export function useChat(roomId: string) {
 
   const pendingCandidates = useRef<RTCIceCandidate[]>([]);
 
-  /* AUTO DELETE MESSAGES */
+  /* AUTO DELETE */
 
   useEffect(() => {
 
@@ -84,7 +84,17 @@ export function useChat(roomId: string) {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
-        { urls: "stun:stun2.l.google.com:19302" }
+        { urls: "stun:stun2.l.google.com:19302" },
+        {
+          urls: "turn:openrelay.metered.ca:80",
+          username: "openrelayproject",
+          credential: "openrelayproject"
+        },
+        {
+          urls: "turn:openrelay.metered.ca:443",
+          username: "openrelayproject",
+          credential: "openrelayproject"
+        }
       ]
     });
 
@@ -148,8 +158,6 @@ export function useChat(roomId: string) {
     const offer = await pcRef.current!.createOffer();
 
     await pcRef.current!.setLocalDescription(offer);
-
-    await new Promise(r => setTimeout(r, 200));
 
     wsRef.current?.send(JSON.stringify({
       type: "callSignal",
@@ -220,25 +228,7 @@ export function useChat(roomId: string) {
 
         const parsed = JSON.parse(event.data);
 
-        if (parsed.type === "userJoined") {
-
-          const data = wsEvents.receive.userJoined.parse(parsed.payload);
-
-          if (data.clientsCount > 1) {
-
-            wsRef.current?.send(JSON.stringify({
-              type: "publicKey",
-              payload: {
-                roomId,
-                publicKey: myPublicKeyBase64Ref.current
-              }
-            }));
-
-          }
-
-        }
-
-        else if (parsed.type === "publicKey") {
+        if (parsed.type === "publicKey") {
 
           const data = wsEvents.receive.publicKey.parse(parsed.payload);
 
@@ -274,11 +264,6 @@ export function useChat(roomId: string) {
 
           const payload = JSON.parse(decryptedJson);
 
-          const expiresAt =
-            payload.destructTimer
-              ? Date.now() + payload.destructTimer * 1000
-              : null;
-
           setMessages(prev => [
             ...prev,
             {
@@ -287,16 +272,9 @@ export function useChat(roomId: string) {
               image: payload.image,
               isMine: false,
               timestamp: data.timestamp,
-              expiresAt
+              expiresAt: null
             }
           ]);
-
-        }
-
-        else if (parsed.type === "typing") {
-
-          const data = wsEvents.receive.typing.parse(parsed.payload);
-          setPeerIsTyping(data.isTyping);
 
         }
 
@@ -328,12 +306,6 @@ export function useChat(roomId: string) {
               new RTCSessionDescription(signal.offer)
             );
 
-            for (const c of pendingCandidates.current) {
-              await pcRef.current?.addIceCandidate(c);
-            }
-
-            pendingCandidates.current = [];
-
             const answer = await pcRef.current!.createAnswer();
 
             await pcRef.current!.setLocalDescription(answer);
@@ -350,12 +322,6 @@ export function useChat(roomId: string) {
             await pcRef.current?.setRemoteDescription(
               new RTCSessionDescription(signal.answer)
             );
-
-            for (const c of pendingCandidates.current) {
-              await pcRef.current?.addIceCandidate(c);
-            }
-
-            pendingCandidates.current = [];
 
           }
 
@@ -416,9 +382,6 @@ export function useChat(roomId: string) {
       payload: { roomId, encryptedPayload, iv }
     }));
 
-    const expiresAt =
-      destructTimer ? Date.now() + destructTimer * 1000 : null;
-
     setMessages(prev => [
       ...prev,
       {
@@ -426,7 +389,7 @@ export function useChat(roomId: string) {
         ...content,
         isMine: true,
         timestamp: Date.now(),
-        expiresAt
+        expiresAt: null
       }
     ]);
 
