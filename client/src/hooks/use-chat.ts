@@ -85,16 +85,6 @@ export function useChat(roomId: string) {
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
         { urls: "stun:stun2.l.google.com:19302" },
-        {
-          urls: "turn:openrelay.metered.ca:80",
-          username: "openrelayproject",
-          credential: "openrelayproject"
-        },
-        {
-          urls: "turn:openrelay.metered.ca:443",
-          username: "openrelayproject",
-          credential: "openrelayproject"
-        }
       ]
     });
 
@@ -228,7 +218,29 @@ export function useChat(roomId: string) {
 
         const parsed = JSON.parse(event.data);
 
-        if (parsed.type === "publicKey") {
+        /* USER JOINED */
+
+        if (parsed.type === "userJoined") {
+
+          const data = wsEvents.receive.userJoined.parse(parsed.payload);
+
+          if (data.clientsCount > 1) {
+
+            wsRef.current?.send(JSON.stringify({
+              type: "publicKey",
+              payload: {
+                roomId,
+                publicKey: myPublicKeyBase64Ref.current
+              }
+            }));
+
+          }
+
+        }
+
+        /* KEY EXCHANGE */
+
+        else if (parsed.type === "publicKey") {
 
           const data = wsEvents.receive.publicKey.parse(parsed.payload);
 
@@ -252,6 +264,8 @@ export function useChat(roomId: string) {
 
         }
 
+        /* MESSAGE */
+
         else if (parsed.type === "message") {
 
           const data = wsEvents.receive.message.parse(parsed.payload);
@@ -264,6 +278,11 @@ export function useChat(roomId: string) {
 
           const payload = JSON.parse(decryptedJson);
 
+          const expiresAt =
+            payload.destructTimer
+              ? Date.now() + payload.destructTimer * 1000
+              : null;
+
           setMessages(prev => [
             ...prev,
             {
@@ -272,11 +291,22 @@ export function useChat(roomId: string) {
               image: payload.image,
               isMine: false,
               timestamp: data.timestamp,
-              expiresAt: null
+              expiresAt
             }
           ]);
 
         }
+
+        /* TYPING */
+
+        else if (parsed.type === "typing") {
+
+          const data = wsEvents.receive.typing.parse(parsed.payload);
+          setPeerIsTyping(data.isTyping);
+
+        }
+
+        /* CALL SIGNAL */
 
         else if (parsed.type === "callSignal") {
 
@@ -327,13 +357,13 @@ export function useChat(roomId: string) {
 
           if (signal.candidate) {
 
-            if (pcRef.current?.remoteDescription) {
+            try {
 
-              await pcRef.current.addIceCandidate(signal.candidate);
+              await pcRef.current?.addIceCandidate(signal.candidate);
 
-            } else {
+            } catch {
 
-              pendingCandidates.current.push(signal.candidate);
+              console.log("ICE ignored");
 
             }
 
@@ -382,6 +412,9 @@ export function useChat(roomId: string) {
       payload: { roomId, encryptedPayload, iv }
     }));
 
+    const expiresAt =
+      destructTimer ? Date.now() + destructTimer * 1000 : null;
+
     setMessages(prev => [
       ...prev,
       {
@@ -389,7 +422,7 @@ export function useChat(roomId: string) {
         ...content,
         isMine: true,
         timestamp: Date.now(),
-        expiresAt: null
+        expiresAt
       }
     ]);
 
