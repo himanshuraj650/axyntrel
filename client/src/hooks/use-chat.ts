@@ -55,31 +55,25 @@ export function useChat(roomId: string) {
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
 
-  /* ---------------- AUTO DELETE MESSAGES ---------------- */
+  /* ---------- Auto delete messages ---------- */
 
   useEffect(() => {
-
     const interval = setInterval(() => {
-
       const now = Date.now();
 
       setMessages((prev) => {
-
         const filtered = prev.filter(
           (msg) => msg.expiresAt === null || msg.expiresAt > now
         );
 
         return filtered.length === prev.length ? prev : filtered;
-
       });
-
     }, 1000);
 
     return () => clearInterval(interval);
-
   }, []);
 
-  /* ---------------- WEBRTC ---------------- */
+  /* ---------- WebRTC ---------- */
 
   const createPeerConnection = () => {
 
@@ -87,11 +81,6 @@ export function useChat(roomId: string) {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
-        {
-          urls: "turn:openrelay.metered.ca:80",
-          username: "openrelayproject",
-          credential: "openrelayproject",
-        },
       ],
     });
 
@@ -103,9 +92,7 @@ export function useChat(roomId: string) {
     };
 
     pc.onicecandidate = (event) => {
-
       if (event.candidate && wsRef.current) {
-
         wsRef.current.send(
           JSON.stringify({
             type: "callSignal",
@@ -115,9 +102,7 @@ export function useChat(roomId: string) {
             },
           })
         );
-
       }
-
     };
 
     pcRef.current = pc;
@@ -125,33 +110,40 @@ export function useChat(roomId: string) {
 
   const startCall = async (video: boolean = true) => {
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video,
-      audio: true,
-    });
+    try {
 
-    setCallState({
-      isCalling: true,
-      isReceiving: false,
-      localStream: stream,
-      remoteStream: null,
-    });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: video ? true : false,
+        audio: true,
+      });
 
-    createPeerConnection();
+      setCallState({
+        isCalling: true,
+        isReceiving: false,
+        localStream: stream,
+        remoteStream: null,
+      });
 
-    stream.getTracks().forEach((track) => {
-      pcRef.current?.addTrack(track, stream);
-    });
+      createPeerConnection();
 
-    const offer = await pcRef.current!.createOffer();
-    await pcRef.current!.setLocalDescription(offer);
+      stream.getTracks().forEach((track) => {
+        pcRef.current?.addTrack(track, stream);
+      });
 
-    wsRef.current?.send(
-      JSON.stringify({
-        type: "callSignal",
-        payload: { offer, roomId },
-      })
-    );
+      const offer = await pcRef.current!.createOffer();
+      await pcRef.current!.setLocalDescription(offer);
+
+      wsRef.current?.send(
+        JSON.stringify({
+          type: "callSignal",
+          payload: { offer, roomId, video },
+        })
+      );
+
+    } catch (err) {
+      console.error("Call error:", err);
+      alert("Camera or microphone not available.");
+    }
 
   };
 
@@ -170,7 +162,7 @@ export function useChat(roomId: string) {
 
   };
 
-  /* ---------------- WEBSOCKET ---------------- */
+  /* ---------- WebSocket ---------- */
 
   const connect = useCallback(async () => {
 
@@ -221,7 +213,7 @@ export function useChat(roomId: string) {
 
         const parsed = JSON.parse(event.data);
 
-        /* USER JOINED */
+        /* user joined */
 
         if (parsed.type === "userJoined") {
 
@@ -243,7 +235,7 @@ export function useChat(roomId: string) {
 
         }
 
-        /* PUBLIC KEY */
+        /* key exchange */
 
         else if (parsed.type === "publicKey") {
 
@@ -269,7 +261,7 @@ export function useChat(roomId: string) {
 
         }
 
-        /* MESSAGE */
+        /* message */
 
         else if (parsed.type === "message") {
 
@@ -300,7 +292,7 @@ export function useChat(roomId: string) {
 
         }
 
-        /* TYPING */
+        /* typing */
 
         else if (parsed.type === "typing") {
 
@@ -309,7 +301,7 @@ export function useChat(roomId: string) {
 
         }
 
-        /* CALL SIGNAL */
+        /* call signal */
 
         else if (parsed.type === "callSignal") {
 
@@ -318,8 +310,8 @@ export function useChat(roomId: string) {
           if (signal.offer) {
 
             const stream = await navigator.mediaDevices.getUserMedia({
+              video: signal.video ? true : false,
               audio: true,
-              video: true,
             });
 
             setCallState({
@@ -383,7 +375,7 @@ export function useChat(roomId: string) {
 
   }, [connect]);
 
-  /* ---------------- SEND MESSAGE ---------------- */
+  /* ---------- send message ---------- */
 
   const sendMessage = async (
     content: { text?: string; image?: string },
@@ -447,4 +439,5 @@ export function useChat(roomId: string) {
     startCall,
     endCall,
   };
+
 }
