@@ -171,6 +171,21 @@ export function useChat(roomId: string) {
 
       ws.onmessage = async (event) => {
         const parsed = JSON.parse(event.data);
+        if (parsed.type === "userJoined") {
+  const data = wsEvents.receive.userJoined.parse(parsed.payload);
+
+  if (data.clientsCount > 1) {
+    wsRef.current?.send(
+      JSON.stringify({
+        type: "publicKey",
+        payload: {
+          roomId,
+          publicKey: myPublicKeyBase64Ref.current,
+        },
+      })
+    );
+  }
+}
 
         /* ---------- key exchange ---------- */
 
