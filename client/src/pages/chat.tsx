@@ -190,6 +190,30 @@ export default function Chat() {
       >
 
         <div className="max-w-3xl mx-auto flex flex-col pb-4">
+          {/* EMPTY STATE */}
+
+{messages.length === 0 && connectionState === "secured" && (
+
+  <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground opacity-60 select-none">
+
+    <ShieldCheck className="w-16 h-16 mb-4 text-primary" />
+
+    <p className="font-mono text-sm max-w-xs">
+      Connection secured with end-to-end encryption.
+      Messages exist only on these devices.
+    </p>
+
+  </div>
+
+)}
+
+<AnimatePresence>
+
+  {messages.map((msg) => (
+    <MessageBubble key={msg.id} message={msg} />
+  ))}
+
+</AnimatePresence>
 
           <AnimatePresence>
 
