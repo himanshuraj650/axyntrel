@@ -39,7 +39,12 @@ export default function Chat() {
   useEffect(() => {
 
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+
     }
 
   }, [messages, peerIsTyping]);
@@ -111,6 +116,7 @@ export default function Chat() {
   if (errorMsg) {
 
     return (
+
       <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-background">
 
         <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
@@ -131,6 +137,7 @@ export default function Chat() {
         </Link>
 
       </div>
+
     );
 
   }
@@ -159,7 +166,7 @@ export default function Chat() {
               onClick={copyRoomId}
             >
 
-              <h1 className="font-mono font-bold text-sm">
+              <h1 className="font-mono font-bold text-sm tracking-widest">
                 ID: {roomId}
               </h1>
 
@@ -172,8 +179,10 @@ export default function Chat() {
             </div>
 
             <div className={`flex items-center gap-1 text-xs ${currentStatus.color}`}>
+
               <StatusIcon className="w-3 h-3" />
               {currentStatus.text}
+
             </div>
 
           </div>
@@ -186,51 +195,53 @@ export default function Chat() {
 
       <main
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4"
+        className="flex-1 overflow-y-auto p-4 bg-grid-pattern"
       >
 
-        <div className="max-w-3xl mx-auto flex flex-col pb-4">
+        <div className="max-w-3xl mx-auto flex flex-col min-h-full pb-4">
+
           {/* EMPTY STATE */}
 
-{messages.length === 0 && connectionState === "secured" && (
+          {messages.length === 0 && connectionState === "secured" && (
 
-  <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground opacity-60 select-none">
+            <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground opacity-60 select-none">
 
-    <ShieldCheck className="w-16 h-16 mb-4 text-primary" />
+              <ShieldCheck className="w-16 h-16 mb-4 text-primary" />
 
-    <p className="font-mono text-sm max-w-xs">
-      Connection secured with end-to-end encryption.
-      Messages exist only on these devices.
-    </p>
+              <p className="font-mono text-sm max-w-xs">
+                Connection secured with end-to-end encryption.
+                Messages exist only on these devices.
+              </p>
 
-  </div>
+            </div>
 
-)}
+          )}
 
-<AnimatePresence>
-
-  {messages.map((msg) => (
-    <MessageBubble key={msg.id} message={msg} />
-  ))}
-
-</AnimatePresence>
-
-          <AnimatePresence>
+          <AnimatePresence initial={false}>
 
             {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
+
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+              />
+
             ))}
 
           </AnimatePresence>
+
+          {/* TYPING INDICATOR */}
 
           {peerIsTyping && (
 
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-muted-foreground text-sm"
+              className="text-muted-foreground text-sm mt-2"
             >
+
               typing...
+
             </motion.div>
 
           )}
@@ -241,16 +252,23 @@ export default function Chat() {
 
       {/* INPUT */}
 
-      <ChatInput
-        onSendMessage={(text, timer) =>
-          sendMessage({ text }, timer)
-        }
-        onSendImage={(image, timer) =>
-          sendMessage({ image }, timer)
-        }
-        onTyping={sendTypingStatus}
-        disabled={connectionState !== "secured"}
-      />
+      <div className="flex-none">
+
+        <ChatInput
+          onSendMessage={(text, timer) =>
+            sendMessage({ text }, timer)
+          }
+
+          onSendImage={(image, timer) =>
+            sendMessage({ image }, timer)
+          }
+
+          onTyping={sendTypingStatus}
+
+          disabled={connectionState !== "secured"}
+        />
+
+      </div>
 
     </div>
 
