@@ -54,6 +54,7 @@ export function useChat(roomId: string) {
   const myPublicKeyBase64Ref = useRef<string | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
+  const pendingCandidates = useRef<RTCIceCandidate[]>([]);
 
   /* ---------- Auto delete messages ---------- */
 
@@ -328,6 +329,11 @@ export function useChat(roomId: string) {
             });
 
             await pcRef.current!.setRemoteDescription(signal.offer);
+            pendingCandidates.current.forEach(async (c) => {
+  await pcRef.current?.addIceCandidate(c);
+});
+
+pendingCandidates.current = [];
 
             const answer = await pcRef.current!.createAnswer();
             await pcRef.current!.setLocalDescription(answer);
@@ -346,9 +352,18 @@ export function useChat(roomId: string) {
           }
 
           if (signal.candidate) {
-            await pcRef.current?.addIceCandidate(signal.candidate);
-          }
 
+  if (pcRef.current?.remoteDescription) {
+
+    await pcRef.current.addIceCandidate(signal.candidate);
+
+  } else {
+
+    pendingCandidates.current.push(signal.candidate);
+
+  }
+
+}
         }
 
       };
