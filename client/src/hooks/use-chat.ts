@@ -56,7 +56,7 @@ export function useChat(roomId: string) {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const pendingCandidates = useRef<RTCIceCandidate[]>([]);
 
-  /* ---------- Auto delete messages ---------- */
+  /* ---------------- AUTO DELETE MESSAGES ---------------- */
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -69,12 +69,13 @@ export function useChat(roomId: string) {
 
         return filtered.length === prev.length ? prev : filtered;
       });
+
     }, 1000);
 
     return () => clearInterval(interval);
   }, []);
 
-  /* ---------- WebRTC ---------- */
+  /* ---------------- WEBRTC ---------------- */
 
   const createPeerConnection = () => {
 
@@ -82,6 +83,17 @@ export function useChat(roomId: string) {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        {
+          urls: "turn:openrelay.metered.ca:80",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+        {
+          urls: "turn:openrelay.metered.ca:443",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
       ],
     });
 
@@ -106,47 +118,56 @@ export function useChat(roomId: string) {
       }
     };
 
+    pc.onconnectionstatechange = () => {
+      console.log("WebRTC state:", pc.connectionState);
+    };
+
     pcRef.current = pc;
   };
 
+  /* ---------------- START CALL ---------------- */
+
   const startCall = async (video: boolean = true) => {
 
-    try {
+    let stream: MediaStream;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: video ? true : false,
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: video,
         audio: true,
       });
-
-      setCallState({
-        isCalling: true,
-        isReceiving: false,
-        localStream: stream,
-        remoteStream: null,
+    } catch {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
       });
-
-      createPeerConnection();
-
-      stream.getTracks().forEach((track) => {
-        pcRef.current?.addTrack(track, stream);
-      });
-
-      const offer = await pcRef.current!.createOffer();
-      await pcRef.current!.setLocalDescription(offer);
-
-      wsRef.current?.send(
-        JSON.stringify({
-          type: "callSignal",
-          payload: { offer, roomId, video },
-        })
-      );
-
-    } catch (err) {
-      console.error("Call error:", err);
-      alert("Camera or microphone not available.");
     }
 
+    setCallState({
+      isCalling: true,
+      isReceiving: false,
+      localStream: stream,
+      remoteStream: null,
+    });
+
+    createPeerConnection();
+
+    stream.getTracks().forEach((track) => {
+      pcRef.current?.addTrack(track, stream);
+    });
+
+    const offer = await pcRef.current!.createOffer();
+    await pcRef.current!.setLocalDescription(offer);
+
+    wsRef.current?.send(
+      JSON.stringify({
+        type: "callSignal",
+        payload: { offer, roomId, video },
+      })
+    );
+
   };
+
+  /* ---------------- END CALL ---------------- */
 
   const endCall = () => {
 
@@ -163,7 +184,7 @@ export function useChat(roomId: string) {
 
   };
 
-  /* ---------- WebSocket ---------- */
+  /* ---------------- WEBSOCKET ---------------- */
 
   const connect = useCallback(async () => {
 
@@ -182,31 +203,25 @@ export function useChat(roomId: string) {
       const protocol =
         window.location.protocol === "https:" ? "wss:" : "ws:";
 
-      const host = window.location.host;
-
-      const ws = new WebSocket(`${protocol}//${host}/ws`);
+      const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
       wsRef.current = ws;
 
       ws.onopen = () => {
 
         setConnectionState("waiting_for_peer");
 
-        ws.send(
-          JSON.stringify({
-            type: "join",
-            payload: { roomId },
-          })
-        );
+        ws.send(JSON.stringify({
+          type: "join",
+          payload: { roomId },
+        }));
 
-        ws.send(
-          JSON.stringify({
-            type: "publicKey",
-            payload: {
-              roomId,
-              publicKey: myPublicKeyBase64Ref.current,
-            },
-          })
-        );
+        ws.send(JSON.stringify({
+          type: "publicKey",
+          payload: {
+            roomId,
+            publicKey: myPublicKeyBase64Ref.current,
+          },
+        }));
 
       };
 
@@ -214,7 +229,7 @@ export function useChat(roomId: string) {
 
         const parsed = JSON.parse(event.data);
 
-        /* user joined */
+        /* USER JOINED */
 
         if (parsed.type === "userJoined") {
 
@@ -222,21 +237,19 @@ export function useChat(roomId: string) {
 
           if (data.clientsCount > 1) {
 
-            wsRef.current?.send(
-              JSON.stringify({
-                type: "publicKey",
-                payload: {
-                  roomId,
-                  publicKey: myPublicKeyBase64Ref.current,
-                },
-              })
-            );
+            wsRef.current?.send(JSON.stringify({
+              type: "publicKey",
+              payload: {
+                roomId,
+                publicKey: myPublicKeyBase64Ref.current,
+              },
+            }));
 
           }
 
         }
 
-        /* key exchange */
+        /* KEY EXCHANGE */
 
         else if (parsed.type === "publicKey") {
 
@@ -262,7 +275,7 @@ export function useChat(roomId: string) {
 
         }
 
-        /* message */
+        /* MESSAGE */
 
         else if (parsed.type === "message") {
 
@@ -293,7 +306,7 @@ export function useChat(roomId: string) {
 
         }
 
-        /* typing */
+        /* TYPING */
 
         else if (parsed.type === "typing") {
 
@@ -302,7 +315,7 @@ export function useChat(roomId: string) {
 
         }
 
-        /* call signal */
+        /* CALL SIGNAL */
 
         else if (parsed.type === "callSignal") {
 
@@ -310,8 +323,10 @@ export function useChat(roomId: string) {
 
           if (signal.offer) {
 
+            createPeerConnection();
+
             const stream = await navigator.mediaDevices.getUserMedia({
-              video: signal.video ? true : false,
+              video: signal.video,
               audio: true,
             });
 
@@ -322,48 +337,50 @@ export function useChat(roomId: string) {
               remoteStream: null,
             });
 
-            createPeerConnection();
-
             stream.getTracks().forEach((track) => {
               pcRef.current?.addTrack(track, stream);
             });
 
             await pcRef.current!.setRemoteDescription(signal.offer);
-            pendingCandidates.current.forEach(async (c) => {
-  await pcRef.current?.addIceCandidate(c);
-});
 
-pendingCandidates.current = [];
+            for (const c of pendingCandidates.current) {
+              await pcRef.current?.addIceCandidate(c);
+            }
+
+            pendingCandidates.current = [];
 
             const answer = await pcRef.current!.createAnswer();
             await pcRef.current!.setLocalDescription(answer);
 
-            wsRef.current?.send(
-              JSON.stringify({
-                type: "callSignal",
-                payload: { answer, roomId },
-              })
-            );
+            wsRef.current?.send(JSON.stringify({
+              type: "callSignal",
+              payload: { answer, roomId },
+            }));
 
           }
 
           if (signal.answer) {
+
             await pcRef.current?.setRemoteDescription(signal.answer);
+
+            for (const c of pendingCandidates.current) {
+              await pcRef.current?.addIceCandidate(c);
+            }
+
+            pendingCandidates.current = [];
+
           }
 
           if (signal.candidate) {
 
-  if (pcRef.current?.remoteDescription) {
+            if (pcRef.current?.remoteDescription) {
+              await pcRef.current.addIceCandidate(signal.candidate);
+            } else {
+              pendingCandidates.current.push(signal.candidate);
+            }
 
-    await pcRef.current.addIceCandidate(signal.candidate);
+          }
 
-  } else {
-
-    pendingCandidates.current.push(signal.candidate);
-
-  }
-
-}
         }
 
       };
@@ -382,15 +399,13 @@ pendingCandidates.current = [];
     connect();
 
     return () => {
-
       wsRef.current?.close();
       endCall();
-
     };
 
   }, [connect]);
 
-  /* ---------- send message ---------- */
+  /* ---------------- SEND MESSAGE ---------------- */
 
   const sendMessage = async (
     content: { text?: string; image?: string },
@@ -406,12 +421,10 @@ pendingCandidates.current = [];
       sharedSecretRef.current
     );
 
-    wsRef.current.send(
-      JSON.stringify({
-        type: "message",
-        payload: { roomId, encryptedPayload, iv },
-      })
-    );
+    wsRef.current.send(JSON.stringify({
+      type: "message",
+      payload: { roomId, encryptedPayload, iv },
+    }));
 
     const expiresAt = destructTimer
       ? Date.now() + destructTimer * 1000
@@ -434,12 +447,10 @@ pendingCandidates.current = [];
 
   const sendTypingStatus = (isTyping: boolean) => {
 
-    wsRef.current?.send(
-      JSON.stringify({
-        type: "typing",
-        payload: { roomId, isTyping },
-      })
-    );
+    wsRef.current?.send(JSON.stringify({
+      type: "typing",
+      payload: { roomId, isTyping },
+    }));
 
   };
 
