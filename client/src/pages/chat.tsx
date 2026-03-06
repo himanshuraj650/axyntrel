@@ -44,29 +44,37 @@ export default function Chat() {
 
   const [copied, setCopied] = useState(false);
 
-  /* attach streams */
+  /* attach remote stream */
 
   useEffect(() => {
 
     if (remoteVideoRef.current && callState.remoteStream) {
+
       remoteVideoRef.current.srcObject = callState.remoteStream;
+
+      remoteVideoRef.current.play().catch(() => {
+        console.log("remote autoplay blocked");
+      });
+
     }
 
   }, [callState.remoteStream]);
 
+  /* attach local stream */
+
   useEffect(() => {
 
-  if (remoteVideoRef.current && callState.remoteStream) {
+    if (localVideoRef.current && callState.localStream) {
 
-    remoteVideoRef.current.srcObject = callState.remoteStream;
+      localVideoRef.current.srcObject = callState.localStream;
 
-    remoteVideoRef.current.play().catch(() => {
-      console.log("Autoplay blocked");
-    });
+      localVideoRef.current.play().catch(() => {
+        console.log("local autoplay blocked");
+      });
 
-  }
+    }
 
-}, [callState.remoteStream]);
+  }, [callState.localStream]);
 
   /* auto scroll */
 
@@ -248,7 +256,6 @@ export default function Chat() {
 
       </header>
 
-
       {/* CALL UI */}
 
       {callState.remoteStream && (
@@ -256,12 +263,12 @@ export default function Chat() {
         <div className="bg-black flex justify-center items-center">
 
           <video
-  ref={remoteVideoRef}
-  autoPlay
-  playsInline
-  controls={false}
-  className="w-full h-[300px] bg-black"
-/>
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="w-full h-[320px] bg-black"
+          />
+
         </div>
 
       )}
@@ -273,11 +280,10 @@ export default function Chat() {
           autoPlay
           muted
           playsInline
-          className="w-28 fixed bottom-24 right-4 rounded-lg border"
+          className="w-32 fixed bottom-24 right-4 rounded-lg border shadow-lg"
         />
 
       )}
-
 
       {/* CHAT */}
 
@@ -311,7 +317,6 @@ export default function Chat() {
         </div>
 
       </main>
-
 
       {/* INPUT */}
 

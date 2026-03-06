@@ -136,23 +136,28 @@ export function useChat(roomId: string) {
 
   const startCall = async (video: boolean = true) => {
 
-    let stream: MediaStream;
+  console.log("Starting call...");
 
-    try {
+  let stream;
 
-      stream = await navigator.mediaDevices.getUserMedia({
-        video,
-        audio: true
-      });
+  try {
 
-    } catch {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: video,
+      audio: true
+    });
 
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: true
-      });
+    console.log("Camera stream obtained:", stream);
 
-    }
+  } catch (err) {
 
+    console.error("Camera error:", err);
+
+    alert("Camera or microphone access denied");
+
+    return;
+
+  }
     setCallState({
       isCalling: true,
       isReceiving: false,
