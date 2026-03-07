@@ -7,8 +7,7 @@ import {
   CheckCircle2,
   Lock,
   ShieldAlert,
-  ShieldCheck,
-  Phone
+  ShieldCheck
 } from "lucide-react";
 
 import { useChat } from "@/hooks/use-chat";
@@ -191,14 +190,7 @@ export default function Chat() {
 
         </div>
 
-        {/* VOICE CALL BUTTON */}
-
-        <button
-          onClick={() => startCall()}
-          className="p-2 rounded-lg hover:bg-accent"
-        >
-          <Phone className="w-5 h-5 text-primary" />
-        </button>
+  
 
       </header>
 
